@@ -1,0 +1,15 @@
+{
+  "dataset": "C:\\Users\\Antoi\\Desktop\\SNN\\data\\Dataset\\sample_train.jsonl",
+  "val_dataset": null,
+  "epochs": 1,
+  "duration_sec": 1.8718523979187012,
+  "tokens_processed": 32,
+  "metrics": {
+    "train/epoch_loss": 2.8367919921875,
+    "train/accuracy": 0.0,
+    "perf/tokens_per_s": 17.095365016803978,
+    "perf/latency_ms": 935.9261989593506,
+    "model/size_mb": 4.215415954589844
+  },
+  "checkpoint": "C:\\Users\\Antoi\\Desktop\\SNN\\src\\Core_Models\\Save\\model.safetensors"
+}

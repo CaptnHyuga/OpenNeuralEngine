@@ -1,0 +1,91 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Backup files
+*.backup
+*.bak
+*.old
+*~
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Logs
+*.log
+logs/
+
+# Model weights (large files - use Git LFS or exclude)
+src/Core_Models/Save/*.safetensors
+src/Core_Models/Save/*.bin
+src/Core_Models/Save/*.pt
+Core_Models/Save/*.safetensors
+Core_Models/Save/*.bin
+Core_Models/Save/*.pt
+*.safetensors
+*.ckpt
+
+# ONNX models (optional - can be large)
+*.onnx
+
+# Data artifacts
+Data/eval_runs/*.json
+!Data/eval_runs/index.json
+data/eval_runs/
+
+# Secrets and credentials
+*.pem
+*.key
+secrets/
+credentials/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testing artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Docker & Experiment tracking
+docker/mlruns/
+docker/mlartifacts/
+docker/*.db
+docker/*.db-shm
+docker/*.db-wal
+.aim_project/
+mlruns/
+mlartifacts/
+
+# Temporary files
+*.tmp
+.tmp/
+temp/

@@ -1,0 +1,16 @@
+# Inference API Container
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir fastapi uvicorn pydantic
+
+# Copy application code
+COPY scripts/inference_service.py ./app.py
+
+# Expose internal port
+EXPOSE 8000
+
+# Run inference service
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

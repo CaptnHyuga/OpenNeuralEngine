@@ -1,0 +1,178 @@
+[project]
+name = "OpenNeuralEngine"
+version = "2.0.0"
+description = "Production-Grade Democratic AI Framework - Train any model on any data with automatic hardware-aware configuration"
+authors = [{ name = "ONN Team" }]
+requires-python = ">=3.10"
+readme = "README.md"
+dependencies = [
+    "torch>=2.0.0",
+    "safetensors>=0.4.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "pydantic>=2.0.0",
+    "tqdm>=4.60.0",
+    "transformers>=4.30.0",
+    "datasets>=2.14.0",
+    "accelerate>=0.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "httpx>=0.24.0",
+    "ruff>=0.1.0"
+]
+tracking = [
+    "aim>=3.21.0; sys_platform != 'win32'",
+]
+quantization = [
+    "bitsandbytes>=0.41.0",
+]
+peft = [
+    "peft>=0.5.0",
+]
+deepspeed = [
+    "deepspeed>=0.10.0",
+]
+vision = [
+    "pillow>=10.0.0",
+    "timm>=0.9.0",
+    "torchvision>=0.15.0",
+]
+audio = [
+    "torchaudio>=2.0.0",
+    "librosa>=0.10.0",
+]
+full = [
+    "OpenNeuralEngine[tracking,quantization,peft,vision,audio]",
+]
+
+[project.scripts]
+onn = "onn:main"
+onn-train = "onn:cmd_train"
+onn-infer = "onn:cmd_infer"
+onn-info = "onn:cmd_info"
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv"
+]
+line-length = 120
+indent-width = 4
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "B"]
+ignore = ["E402"]
+fixable = ["ALL"]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.bandit]
+skips = [
+    "B101",  # Assert used
+    "B615",  # HuggingFace from_pretrained - Expected for dynamic model loading
+]
+exclude_dirs = [
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    ".pytest_cache",
+    "node_modules"
+]
+exclude = ["*.txt", "*.md"]
+
+[tool.onn]
+root = "."
+models_dir = "src/Core_Models/Save"
+default_device = "auto"
+tracking_backend = "aim"
+
+[pytest]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+addopts = """
+-v
+--strict-markers
+--tb=short
+--color=yes
+-ra
+--durations=10
+"""
+
+markers = """
+unit: Unit tests for individual components
+integration: Integration tests across multiple modules
+slow: Tests that take longer to run (>5s)
+gpu: Tests that require GPU/CUDA
+api: Tests for API endpoints
+model: Tests for model architectures
+training: Tests for training functionality
+inference: Tests for inference functionality
+multimodal: Tests for multimodal features
+smoke: Quick smoke tests for basic functionality
+online: Tests requiring network/API access (skipped by default)
+aim: Tests for Aim logging integration
+"""
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*"
+]
+
+[tool.coverage.report]
+precision = 2
+skip_empty = true
+show_missing = true
+
+filterwarnings = """
+ignore::DeprecationWarning
+ignore::PendingDeprecationWarning
+"""
+
+[classifiers]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]

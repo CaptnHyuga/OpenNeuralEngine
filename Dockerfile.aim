@@ -1,0 +1,24 @@
+# Aim Server with Integrated Inference
+# Extends aimstack/aim with custom chat endpoints
+FROM aimstack/aim:latest
+
+# Install dependencies for model loading
+RUN pip install --no-cache-dir \
+    torch --index-url https://download.pytorch.org/whl/cpu \
+    transformers \
+    safetensors
+
+# Copy extension code
+COPY scripts/aim_server_extension.py /workspace/aim_extension.py
+
+# Create startup script that loads extension
+RUN echo '#!/bin/bash\n\
+python /workspace/aim_extension.py &\n\
+aim up --host 0.0.0.0 --port 53800 --repo /aim\n\
+' > /start.sh && chmod +x /start.sh
+
+# Expose port
+EXPOSE 53800
+
+# Use custom startup
+CMD ["/start.sh"]
