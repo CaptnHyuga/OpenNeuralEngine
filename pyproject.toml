@@ -46,8 +46,16 @@ audio = [
     "torchaudio>=2.0.0",
     "librosa>=0.10.0",
 ]
+# NEW: Evaluation using lm-evaluation-harness
+eval = [
+    "lm-eval>=0.4.0",
+]
+# NEW: Inference serving with vLLM
+inference = [
+    "vllm>=0.2.0; sys_platform == 'linux'",
+]
 full = [
-    "OpenNeuralEngine[tracking,quantization,peft,vision,audio]",
+    "OpenNeuralEngine[tracking,quantization,peft,vision,audio,eval]",
 ]
 
 [project.scripts]
@@ -55,6 +63,8 @@ onn = "onn:main"
 onn-train = "onn:cmd_train"
 onn-infer = "onn:cmd_infer"
 onn-info = "onn:cmd_info"
+onn-eval = "onn:cmd_eval"
+onn-serve = "onn:cmd_serve"
 
 [tool.ruff]
 exclude = [
@@ -121,7 +131,7 @@ models_dir = "src/Core_Models/Save"
 default_device = "auto"
 tracking_backend = "aim"
 
-[pytest]
+[tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
@@ -136,20 +146,20 @@ addopts = """
 --durations=10
 """
 
-markers = """
-unit: Unit tests for individual components
-integration: Integration tests across multiple modules
-slow: Tests that take longer to run (>5s)
-gpu: Tests that require GPU/CUDA
-api: Tests for API endpoints
-model: Tests for model architectures
-training: Tests for training functionality
-inference: Tests for inference functionality
-multimodal: Tests for multimodal features
-smoke: Quick smoke tests for basic functionality
-online: Tests requiring network/API access (skipped by default)
-aim: Tests for Aim logging integration
-"""
+markers = [
+    "unit: Unit tests for individual components",
+    "integration: Integration tests across multiple modules",
+    "slow: Tests that take longer to run (>5s)",
+    "gpu: Tests that require GPU/CUDA",
+    "api: Tests for API endpoints",
+    "model: Tests for model architectures",
+    "training: Tests for training functionality",
+    "inference: Tests for inference functionality",
+    "multimodal: Tests for multimodal features",
+    "smoke: Quick smoke tests for basic functionality",
+    "online: Tests requiring network/API access (skipped by default)",
+    "aim: Tests for Aim logging integration",
+]
 
 [tool.coverage.run]
 source = ["src"]

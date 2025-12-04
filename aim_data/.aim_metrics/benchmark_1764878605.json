@@ -1,0 +1,43 @@
+{
+  "session": "onn-benchmark-1764878605",
+  "timestamp": "2025-12-04T15:03:25.578220",
+  "experiment": "ONN-Optimization-Benchmark",
+  "metrics": {
+    "optimized": {
+      "time_per_sample_ms": 0,
+      "throughput_samples_per_sec": 0,
+      "peak_vram_mb": 0,
+      "final_loss": 0
+    },
+    "baseline": {
+      "time_per_sample_ms": 0,
+      "throughput_samples_per_sec": 0,
+      "peak_vram_mb": 0
+    },
+    "speedup": 0
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce GTX 1650 Max-Q",
+    "vram_total_mb": 4096
+  },
+  "model": {
+    "name": "phi-4",
+    "parameters": "16.23B",
+    "layers": 40
+  },
+  "optimization": {
+    "chunk_size": 1,
+    "batch_size": 32,
+    "sparse_layers": [
+      0,
+      1,
+      2,
+      3,
+      36,
+      37,
+      38,
+      39
+    ],
+    "lora_rank": 8
+  }
+}

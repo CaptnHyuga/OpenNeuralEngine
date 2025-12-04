@@ -1,0 +1,20 @@
+{
+  "total_time_seconds": 18.24152135848999,
+  "total_steps": 12,
+  "final_train_loss": 11.462296485900879,
+  "final_train_ppl": 95063.1328125,
+  "best_val_loss": null,
+  "config": {
+    "model_path": "models/phi-4",
+    "output_dir": "output/training_v2",
+    "epochs": 1,
+    "batch_size": 4,
+    "max_samples": 50,
+    "max_seq_len": 128,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.01,
+    "grad_clip": 1.0,
+    "lora_rank": 8,
+    "lora_alpha": 16
+  }
+}

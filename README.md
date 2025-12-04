@@ -9,69 +9,137 @@ We believe that the power of AI should not be locked behind steep learning curve
 
 ## Key Features
 
-*   **User-Friendly API:** Designed for clarity and ease of use without sacrificing flexibility.
-*   **Cross-Platform Support:** Run your models on Windows, Linux, and macOS.
-*   **Extensible Architecture:** Easily integrate custom layers, optimizers, and loss functions.
-*   **Performance Optimized:** Built for speed and efficiency to handle real-world workloads.
+*   **Zero-Configuration Training:** Auto-detects your hardware and makes optimal decisions. No manual VRAM management, batch size tuning, or quantization selection.
+*   **Production-Grade Under The Hood:** Integrates DeepSpeed, FSDP, ZeRO for scaling to billions of parameters.
+*   **Universal Data Support:** Drag-and-drop any dataset - text, images, audio, video, 3D meshes. ONN figures out the format automatically.
+*   **Any Architecture:** CNNs, Transformers, RNNs, Diffusion models - all work with the same simple interface.
+*   **One Command:** Same command trains a 7B model on a laptop OR a 70B model on a multi-GPU cluster.
 
-## Getting Started
-
-### Installation
+## Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/CaptnHyuga/OpenNeuralEngine.git
 cd OpenNeuralEngine
 
-# Install dependencies
+# Install with all features
+pip install -e ".[all]"
+
+# Or minimal install
 pip install -e .
 ```
 
-### Quick Start
+## Quick Start
 
-#### 1. Train a Model
-
-```bash
-# Using the CLI
-onn train --data path/to/data --model model_name
-
-# Or use the interactive launcher
-python Start-SNN.ps1
-```
-
-#### 2. Run Inference
+### Training
 
 ```bash
-onn infer --model path/to/model --input "your input here"
+# Train any HuggingFace model - ONN auto-configures everything
+onn train --model gpt2 --dataset ./data.jsonl
+
+# Large model on limited hardware - automatic quantization + offloading
+onn train --model meta-llama/Llama-2-7b --dataset ./data/ --use-lora
+
+# Distributed training with DeepSpeed ZeRO-3
+onn train --model phi-4 --dataset ./data/ --deepspeed zero3
+
+# Multi-GPU with automatic parallelism
+onn train --model llama-70b --dataset ./data/ --nodes 4
 ```
 
-#### 3. Launch Web Interface
+### Inference & Generation
 
 ```bash
-python launch_web.py
+# Quick text generation
+onn generate --model gpt2 --prompt "Once upon a time"
+
+# Interactive inference mode
+onn infer --model ./my-checkpoint/
+
+# Start OpenAI-compatible API server
+onn serve --model ./my-checkpoint/ --port 8000
+# Then: curl http://localhost:8000/v1/completions -d '{"prompt":"Hello"}'
 ```
 
-Then open `http://localhost:8000` in your browser.
+### Evaluation
 
-### Project Structure
+```bash
+# Quick evaluation (5-10 min)
+onn eval --model ./checkpoint/ --preset quick
+
+# Standard benchmarks (MMLU, HellaSwag, ARC, etc.)
+onn eval --model ./checkpoint/ --preset standard
+
+# Specific tasks
+onn eval --model ./checkpoint/ --task mmlu,hellaswag,arc_challenge
+```
+
+### Utilities
+
+```bash
+# System information
+onn info
+
+# Benchmark your hardware
+onn benchmark --type full --output results.json
+
+# Analyze model architecture
+onn analyze --model gpt2 --config
+
+# Manage checkpoints
+onn checkpoint list ./outputs
+onn checkpoint info ./my-model/
+onn checkpoint clean ./outputs --keep 3
+
+# Merge LoRA adapter with base model
+onn merge --base llama-7b --adapter ./lora-adapter/ --output ./merged-model/
+
+# Inspect any dataset
+onn data ./my-dataset/
+
+# Export model
+onn export --model ./checkpoint/ --format onnx
+```
+
+## Supported Data Formats
+
+ONN automatically detects and loads:
+
+| Type | Formats |
+|------|---------|
+| **Text** | `.txt`, `.json`, `.jsonl`, `.csv`, `.parquet` |
+| **Images** | `.jpg`, `.png`, `.webp`, folder structures |
+| **Audio** | `.wav`, `.mp3`, `.flac`, `.ogg` |
+| **Video** | `.mp4`, `.avi`, `.mov` |
+| **3D Meshes** | `.obj`, `.ply`, `.stl` |
+| **Multimodal** | Auto-detected paired data by filename |
+
+## Project Structure
 
 ```
 OpenNeuralEngine/
-├── src/              # Core framework code
-├── config/           # Configuration files
-├── scripts/          # Utility scripts
-├── frontend/         # Web interface
-├── tests/            # Test suite
-└── utils/            # Helper utilities
+├── onn.py              # Main CLI entry point
+├── src/
+│   ├── orchestration/  # Hardware profiler, config orchestrator
+│   ├── wrappers/       # HF Trainer, DeepSpeed, quantization
+│   ├── data_adapters/  # Universal data loading
+│   ├── evaluation/     # Benchmarking (lm-eval wrapper)
+│   ├── inference/      # vLLM/HF inference engine
+│   └── training/       # Training utilities
+├── config/             # Configuration files
+├── scripts/            # Utility scripts
+├── tests/              # Test suite (170+ tests)
+└── docs/               # Documentation
 ```
 
-### Documentation
+## Documentation
 
 - **[Quick Start Guide](QUICKSTART.md)** - Detailed walkthrough
+- **[Architecture](docs/ARCHITECTURE.md)** - Technical deep-dive
 - **[Contributing](CONTRIBUTING.md)** - How to contribute
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Project roadmap
 
-### Need Help?
+## Need Help?
 
 - 🐛 [Report an Issue](https://github.com/CaptnHyuga/OpenNeuralEngine/issues)
 - 💬 [Ask a Question](https://github.com/CaptnHyuga/OpenNeuralEngine/discussions)

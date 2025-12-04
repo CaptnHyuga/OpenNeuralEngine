@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ONN Optimization Comparison Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0d1117;
+            color: #c9d1d9;
+        }
+        h1, h2 { color: #58a6ff; }
+        .header {
+            background: linear-gradient(135deg, #238636 0%, #da3633 100%);
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .header h1 { color: white; margin: 0; font-size: 2.5em; }
+        .speedup {
+            font-size: 4em;
+            font-weight: bold;
+            color: #3fb950;
+            margin: 20px 0;
+        }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .optimized { border-left: 4px solid #3fb950; }
+        .baseline { border-left: 4px solid #da3633; }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #30363d;
+        }
+        .metric-name { color: #8b949e; }
+        .metric-value { font-weight: bold; }
+        .chart-container {
+            height: 300px;
+        }
+        .winner { color: #3fb950; }
+        .loser { color: #da3633; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ ONN Optimization Results</h1>
+        <div class="speedup">7.5x FASTER</div>
+        <p style="color: rgba(255,255,255,0.8);">Optimized vs Baseline Training Performance</p>
+    </div>
+    
+    <div class="comparison-grid">
+        <div class="card optimized">
+            <h2>✅ Optimized</h2>
+            <div class="metric">
+                <span class="metric-name">Time per sample</span>
+                <span class="metric-value winner">1169ms</span>
+            </div>
+            <div class="metric">
+                <span class="metric-name">Throughput</span>
+                <span class="metric-value winner">0.86/sec</span>
+            </div>
+            <div class="metric">
+                <span class="metric-name">Peak Memory</span>
+                <span class="metric-value">1568MB</span>
+            </div>
+        </div>
+        
+        <div class="card baseline">
+            <h2>❌ Baseline</h2>
+            <div class="metric">
+                <span class="metric-name">Time per sample</span>
+                <span class="metric-value loser">8781ms</span>
+            </div>
+            <div class="metric">
+                <span class="metric-name">Throughput</span>
+                <span class="metric-value loser">0.114/sec</span>
+            </div>
+            <div class="metric">
+                <span class="metric-name">Peak Memory</span>
+                <span class="metric-value">979MB</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>📊 Performance Comparison</h2>
+        <div class="chart-container">
+            <canvas id="comparison-chart"></canvas>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>🎯 Key Insights</h2>
+        <ul style="font-size: 1.1em; line-height: 1.8;">
+            <li>Training is <strong class="winner">7.5x faster</strong> with optimizations</li>
+            <li>Throughput improved by <strong class="winner">7.5x</strong></li>
+            <li>Memory usage: 1568MB (optimized) vs 979MB (baseline)</li>
+            <li>Optimizations: Batched sparse training, LoRA adapters, chunk-based weight loading</li>
+        </ul>
+    </div>
+    
+    <script>
+        new Chart(document.getElementById('comparison-chart'), {
+            type: 'bar',
+            data: {
+                labels: ['Time/Sample (ms)', 'Throughput (samples/sec × 100)', 'Peak Memory (MB ÷ 10)'],
+                datasets: [
+                    {
+                        label: 'Optimized',
+                        data: [1169.11083984375, 85.53508922504291, 156.773681640625],
+                        backgroundColor: 'rgba(63, 185, 80, 0.8)',
+                        borderColor: '#3fb950',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Baseline',
+                        data: [8780.897736549377, 11.38835720449888, 97.85615234375],
+                        backgroundColor: 'rgba(218, 54, 51, 0.8)',
+                        borderColor: '#da3633',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#c9d1d9' } }
+                },
+                scales: {
+                    x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+                    y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

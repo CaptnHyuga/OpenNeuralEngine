@@ -1,0 +1,12 @@
+{
+  "target_layers": [
+    0,
+    10,
+    20,
+    30,
+    39
+  ],
+  "lora_rank": 8,
+  "lora_alpha": 16,
+  "hidden_size": 5120
+}

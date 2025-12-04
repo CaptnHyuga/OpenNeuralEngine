@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Learning Validation Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 { color: #00d9ff; text-align: center; }
+        h2 { color: #00ff88; }
+        .summary {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .key-finding {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-left: 4px solid #00ff88;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background: #00d9ff;
+            color: #1a1a2e;
+        }
+        tr:hover {
+            background: #16213e;
+        }
+        .chart-container {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .conclusion {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid #00ff88;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧠 Learning Validation Report</h1>
+    <p style="text-align: center; color: #888;">Generated: 2025-12-04 15:00:28</p>
+    
+    <div class="summary">
+        <h2>📊 Executive Summary</h2>
+        <p>This report validates that our optimization strategies <b>do not break model learning</b>.</p>
+        <p>We measure:</p>
+        <ul>
+            <li><b>Loss reduction</b>: Does the loss decrease during training?</li>
+            <li><b>Gradient flow</b>: Are gradients propagating through the network?</li>
+            <li><b>Learning signal</b>: Can the model learn a simple pattern?</li>
+        </ul>
+    </div>
+    
+    <h2>📈 Results by Configuration</h2>
+    <table>
+        <tr>
+            <th>Configuration</th>
+            <th>Initial Loss</th>
+            <th>Final Loss</th>
+            <th>Reduction</th>
+            <th>Learning?</th>
+            <th>Gradients?</th>
+            <th>Time</th>
+        </tr>
+        
+            <tr>
+                <td>baseline</td>
+                <td>2.221590</td>
+                <td>2.150910</td>
+                <td>3.2%</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>1.6s</td>
+            </tr>
+            
+            <tr>
+                <td>optimized_b32</td>
+                <td>2.222325</td>
+                <td>2.172324</td>
+                <td>2.2%</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>22.5s</td>
+            </tr>
+            
+    </table>
+    
+    <div class="chart-container">
+        <canvas id="lossChart" height="100"></canvas>
+    </div>
+    
+    <div class="conclusion">
+        <h2>🎯 Key Findings</h2>
+        <div class="key-finding">
+            <p><b>Learning Status:</b></p>
+            <ul>
+                <li>baseline: ✅ Model is learning (reduction: 3.2%)</li><li>optimized_b32: ✅ Model is learning (reduction: 2.2%)</li>
+            </ul>
+        </div>
+        <div class="key-finding">
+            <p><b>Gradient Flow:</b></p>
+            <p>All configurations show healthy gradient flow ✅</p>
+        </div>
+        <div class="key-finding">
+            <p><b>Conclusion:</b></p>
+            <p>✅ Optimizations preserve learning capability! The model can effectively learn patterns with batched processing.</p>
+        </div>
+    </div>
+    
+    <script>
+        const plotData = {"baseline": [2.221589756011963, 2.2080612182617188, 2.184141969680786, 2.1743501901626585, 2.1659069418907166, 2.1603724360466003, 2.1563188672065734, 2.1540603637695312, 2.152092254161835, 2.150910425186157], "optimized_b32": [2.2223254919052122, 2.2145940542221068, 2.2054935693740845, 2.1951695322990417, 2.186699831485748, 2.1810578227043154, 2.1774784684181214, 2.175068438053131, 2.1734362840652466, 2.172323727607727]};
+        const ctx = document.getElementById('lossChart').getContext('2d');
+        
+        const datasets = Object.entries(plotData).map(([name, losses], i) => ({
+            label: name,
+            data: losses,
+            borderColor: ['#00ff88', '#00d9ff', '#ff6b6b', '#ffd93d'][i % 4],
+            backgroundColor: ['#00ff8822', '#00d9ff22', '#ff6b6b22', '#ffd93d22'][i % 4],
+            fill: true,
+            tension: 0.4
+        }));
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: Math.max(...Object.values(plotData).map(d => d.length))}, (_, i) => `Epoch ${i+1}`),
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Loss Curves by Configuration',
+                        color: '#fff',
+                        font: { size: 16 }
+                    },
+                    legend: {
+                        labels: { color: '#fff' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#888' },
+                        grid: { color: '#333' }
+                    },
+                    y: {
+                        ticks: { color: '#888' },
+                        grid: { color: '#333' },
+                        title: {
+                            display: true,
+                            text: 'Loss',
+                            color: '#888'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

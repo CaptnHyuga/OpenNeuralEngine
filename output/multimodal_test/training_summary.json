@@ -1,0 +1,31 @@
+{
+  "total_time_seconds": 18.21099042892456,
+  "samples_processed": 20,
+  "final_loss": 91.46774604916573,
+  "avg_time_per_sample_ms": 910.442066192627,
+  "config": {
+    "model_path": "models/phi-4",
+    "chunk_size": 1,
+    "batch_size": 32,
+    "sparse_layers": [
+      0,
+      1,
+      2,
+      3,
+      36,
+      37,
+      38,
+      39
+    ],
+    "lora_rank": 8,
+    "lora_alpha": 16,
+    "learning_rate": 0.0001,
+    "epochs": 1,
+    "max_samples": 20,
+    "gradient_accumulation": 1,
+    "output_dir": "output/multimodal_test",
+    "checkpoint_every": 100,
+    "log_every": 10,
+    "use_tensorboard": true
+  }
+}

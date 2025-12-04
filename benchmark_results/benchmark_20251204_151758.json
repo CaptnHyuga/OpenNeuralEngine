@@ -1,0 +1,39 @@
+{
+  "speed": {
+    "batch_1": {
+      "batch_size": 1,
+      "avg_time_ms": 5.793110000377055,
+      "time_per_sample_ms": 5.793110000377055,
+      "samples_per_sec": 172.61885238411028,
+      "final_loss": 1.0116596221923828
+    },
+    "batch_32": {
+      "batch_size": 32,
+      "avg_time_ms": 114.13109999975859,
+      "time_per_sample_ms": 3.566596874992456,
+      "samples_per_sec": 280.3793181706624,
+      "final_loss": 1.0131229162216187
+    }
+  },
+  "learning": {
+    "initial_loss": 1.0219793558120727,
+    "final_loss": 1.0010943591594696,
+    "loss_reduction_pct": 2.0435830267831228,
+    "is_learning": true,
+    "loss_history": [
+      1.0219793558120727,
+      1.0179886221885681,
+      1.011858594417572,
+      1.0062367558479308,
+      1.0010943591594696
+    ]
+  },
+  "memory": {
+    "baseline_mb": 17.03936,
+    "after_weight_mb": 121.89696,
+    "after_lora_mb": 122.22464,
+    "peak_mb": 269.059072,
+    "weight_size_mb": 104.8576,
+    "lora_size_mb": 0.32767999999998665
+  }
+}

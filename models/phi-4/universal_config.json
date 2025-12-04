@@ -1,0 +1,55 @@
+{
+  "architecture": {
+    "name": "phi-4",
+    "total_params": 14659507200,
+    "total_size_gb": 29.3190144,
+    "architecture_type": "transformer",
+    "num_layers": 40,
+    "hidden_sizes": [
+      35840,
+      17920,
+      7680,
+      5120
+    ],
+    "layer_groups": 43
+  },
+  "hardware": {
+    "device_type": "cuda",
+    "device_name": "NVIDIA GeForce GTX 1650 with Max-Q Design",
+    "total_memory_gb": 4.294705152,
+    "available_memory_gb": 4.294705152,
+    "compute_units": 1024,
+    "compute_capability": [
+      7,
+      5
+    ],
+    "memory_bandwidth_gbps": 97.50847038362494,
+    "host_to_device_bandwidth_gbps": 3.0355321132270783,
+    "supports_fp16": true,
+    "supports_bf16": false,
+    "supports_int8": true
+  },
+  "config": {
+    "chunk_size": 1,
+    "batch_size": 128,
+    "use_pinned_memory": true,
+    "use_memory_mapping": false,
+    "gradient_checkpointing": false,
+    "compute_dtype": "float16",
+    "storage_dtype": "float16",
+    "active_layers": [
+      0,
+      1,
+      2,
+      3,
+      36,
+      37,
+      38,
+      39
+    ],
+    "layer_selection_strategy": "first_last",
+    "layer_selection_ratio": 0.2,
+    "estimated_vram_mb": 840,
+    "estimated_time_per_sample_ms": 907.1048701473019
+  }
+}

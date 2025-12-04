@@ -1,0 +1,37 @@
+{
+  "hardware": {
+    "device_name": "NVIDIA GeForce GTX 1650 with Max-Q Design",
+    "vram_total_gb": 4.294705152,
+    "vram_available_gb": 4.294705152,
+    "compute_capability": [
+      7,
+      5
+    ],
+    "cuda_cores": 1024,
+    "memory_bandwidth_gbps": 97.62496308652463,
+    "pcie_bandwidth_gbps": 2.928610210543272,
+    "cpu_to_gpu_pinned_bandwidth_gbps": 3.1262775515832817
+  },
+  "model": {
+    "name": "phi-4",
+    "path": "models/phi-4",
+    "total_layers": 40
+  },
+  "optimal_config": {
+    "chunk_size": 3,
+    "batch_size": 32,
+    "sparse_layers": [
+      0,
+      1,
+      2,
+      3,
+      36,
+      37,
+      38,
+      39
+    ],
+    "use_pinned_memory": true,
+    "estimated_vram_mb": 2919,
+    "estimated_time_per_sample_ms": 807.4949979782104
+  }
+}

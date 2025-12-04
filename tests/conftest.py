@@ -72,7 +72,14 @@ def ensure_dummy_checkpoint(model_dir: Path) -> Path:
         intermediate_size=256,
         max_seq_len=64,
     )
-    save_file(tiny_model.state_dict(), checkpoint)
+    
+    # Create a copy of state_dict to avoid tied weights issue
+    state_dict = {}
+    for k, v in tiny_model.state_dict().items():
+        # Clone tensors to break memory sharing
+        state_dict[k] = v.clone().contiguous()
+    
+    save_file(state_dict, checkpoint)
     return checkpoint
 
 

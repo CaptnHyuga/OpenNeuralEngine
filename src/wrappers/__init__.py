@@ -1,17 +1,27 @@
-"""ONN Wrappers - Production library integrations.
+﻿"""ONN Wrappers - Production library integrations."""
 
-Intelligent wrappers around HuggingFace, DeepSpeed, and other
-production-grade libraries with automatic configuration.
-"""
-from .hf_trainer_wrapper import HFTrainerWrapper, TrainingResult
-from .model_loader import UniversalModelLoader, load_model
-from .quantization_wrapper import QuantizationWrapper, quantize_model
+from .hf_trainer_wrapper import HFTrainerWrapper, TrainingResult, train
+from .model_loader import UniversalModelLoader, load_model, register_model
+from .quantization_wrapper import QuantizationWrapper, quantize_model, QuantizationType
+from .batched_sparse import BatchedSparseTrainer, LoRALayer
+from .accelerate_wrapper import (
+    AccelerateWrapper,
+    AccelerateConfig,
+    DistributedStrategy,
+    auto_accelerate,
+    get_deepspeed_config,
+)
 
 __all__ = [
-    "HFTrainerWrapper",
-    "TrainingResult",
-    "UniversalModelLoader", 
-    "load_model",
-    "QuantizationWrapper",
-    "quantize_model",
+    # HuggingFace Trainer
+    "HFTrainerWrapper", "TrainingResult", "train",
+    # Model Loading
+    "UniversalModelLoader", "load_model", "register_model",
+    # Quantization
+    "QuantizationWrapper", "quantize_model", "QuantizationType",
+    # Sparse Training
+    "BatchedSparseTrainer", "LoRALayer",
+    # Distributed Training (Accelerate/DeepSpeed/FSDP)
+    "AccelerateWrapper", "AccelerateConfig", "DistributedStrategy",
+    "auto_accelerate", "get_deepspeed_config",
 ]
