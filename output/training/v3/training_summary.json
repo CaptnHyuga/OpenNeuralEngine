@@ -1,21 +1,24 @@
 {
-  "total_time_seconds": 94.94399905204773,
-  "total_steps": 1,
-  "optimizer_steps": 1,
-  "final_train_loss": 11.4537935256958,
+  "total_time_seconds": 176.6672134399414,
+  "total_steps": 23,
+  "optimizer_steps": 5,
+  "final_train_loss": 11.429777145385742,
   "best_val_loss": null,
+  "stopped_early": false,
+  "stopped_epoch": 1,
   "config": {
     "model_path": "models/phi-4",
     "output_dir": "output/training/v3",
     "epochs": 1,
-    "batch_size": 32,
-    "gradient_accumulation_steps": 1,
-    "effective_batch_size": 32,
-    "max_samples": 30,
+    "batch_size": 4,
+    "gradient_accumulation_steps": 4,
+    "effective_batch_size": 16,
+    "max_samples": 100,
     "max_seq_len": 128,
     "learning_rate": 0.0001,
-    "use_amp": false,
+    "use_amp": true,
     "lora_rank": 8,
-    "lora_alpha": 16
+    "lora_alpha": 16,
+    "resume_from": null
   }
 }

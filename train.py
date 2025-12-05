@@ -5,6 +5,7 @@ ONN Training CLI
 
 Unified command-line interface for training with different pipeline versions.
 Supports automatic configuration based on hardware profile.
+Full ClearML integration for experiment tracking and reproducibility.
 
 Usage:
     python train.py --dataset data/Dataset/math.jsonl --epochs 3
@@ -12,6 +13,14 @@ Usage:
     python train.py --dataset data/3d_vision/0000.parquet --pipeline v3 --amp
     python train.py --compare --dataset data/Dataset/math.jsonl --max-samples 50
     python train.py --auto --dataset data/Dataset/math.jsonl  # Auto-configure!
+    python train.py --dataset data/Dataset/math.jsonl --clearml  # With ClearML tracking
+
+ClearML Integration:
+    - Automatic hyperparameter capture
+    - Real-time metrics (loss, perplexity, learning rate)
+    - Model checkpoint artifacts
+    - Environment reproducibility
+    - Works locally or via ClearML Agent
 """
 
 import argparse
@@ -19,10 +28,66 @@ import sys
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
+
+# ClearML integration - initialized lazily based on --clearml flag
+_clearml_tracker = None
+
+
+def init_clearml_tracking(args) -> Optional["ClearMLTracker"]:
+    """Initialize ClearML tracking if enabled."""
+    global _clearml_tracker
+    
+    if not getattr(args, 'clearml', False):
+        return None
+    
+    try:
+        from src.tracking.clearml_tracker import ClearMLTracker
+        
+        # Build experiment name
+        task_name = getattr(args, 'experiment_name', None)
+        if not task_name:
+            dataset_name = Path(args.dataset).stem
+            task_name = f"{args.pipeline}_{dataset_name}_{time.strftime('%Y%m%d_%H%M%S')}"
+        
+        # Build tags
+        tags = [f"pipeline:{args.pipeline}"]
+        if getattr(args, 'amp', False):
+            tags.append("amp")
+        if getattr(args, 'auto', False):
+            tags.append("auto-config")
+        if getattr(args, 'compare', False):
+            tags.append("comparison")
+        
+        _clearml_tracker = ClearMLTracker(
+            project_name=getattr(args, 'clearml_project', 'ONN Training'),
+            task_name=task_name,
+            task_type="training",
+            tags=tags,
+        )
+        
+        # Log all CLI arguments as hyperparameters
+        _clearml_tracker.log_hyperparameters(vars(args), name="CLI Arguments")
+        
+        print(f"📊 ClearML: Task initialized - {task_name}")
+        if _clearml_tracker.get_task_url():
+            print(f"   View at: {_clearml_tracker.get_task_url()}")
+        
+        return _clearml_tracker
+    except ImportError:
+        print("⚠️  ClearML not installed. Install with: pip install clearml")
+        return None
+    except Exception as e:
+        print(f"⚠️  ClearML initialization failed: {e}")
+        return None
+
+
+def get_clearml_tracker() -> Optional["ClearMLTracker"]:
+    """Get the global ClearML tracker instance."""
+    return _clearml_tracker
 
 
 def run_pipeline_v1(args) -> Dict[str, Any]:
@@ -38,10 +103,23 @@ def run_pipeline_v1(args) -> Dict[str, Any]:
         learning_rate=args.lr,
     )
     
+    # Log config to ClearML
+    tracker = get_clearml_tracker()
+    if tracker:
+        tracker.log_hyperparameters(config.to_dict() if hasattr(config, 'to_dict') else vars(config), name="V1 Config")
+    
     dataset = DatasetLoader.load(args.dataset, config.max_samples)
     trainer = UnifiedTrainer(config)
     summary = trainer.train(dataset)
     summary["pipeline"] = "v1"
+    
+    # Log summary to ClearML
+    if tracker:
+        tracker.log_metrics({
+            "final_loss": summary.get('final_loss', 0),
+            "total_time": summary.get('total_time_seconds', 0),
+        }, step=0, series="summary")
+    
     return summary
 
 
@@ -60,6 +138,11 @@ def run_pipeline_v2(args) -> Dict[str, Any]:
         val_split=args.val_split,
     )
     
+    # Log config to ClearML
+    tracker = get_clearml_tracker()
+    if tracker:
+        tracker.log_hyperparameters(config.to_dict() if hasattr(config, 'to_dict') else vars(config), name="V2 Config")
+    
     all_data = DatasetLoader.load(args.dataset, config.max_samples)
     
     if config.val_split > 0 and len(all_data) > 10:
@@ -72,6 +155,15 @@ def run_pipeline_v2(args) -> Dict[str, Any]:
     trainer = RealLanguageModelTrainer(config)
     summary = trainer.train(train_data, val_data)
     summary["pipeline"] = "v2"
+    
+    # Log summary to ClearML
+    if tracker:
+        tracker.log_metrics({
+            "final_train_loss": summary.get('final_train_loss', 0),
+            "final_train_ppl": summary.get('final_train_ppl', 0),
+            "total_time": summary.get('total_time_seconds', 0),
+        }, step=0, series="summary")
+    
     return summary
 
 
@@ -81,6 +173,9 @@ def run_pipeline_v3(args) -> Dict[str, Any]:
     
     # Get resume value if set
     resume_from = getattr(args, 'resume', None)
+    
+    # Pass ClearML tracker to the trainer
+    tracker = get_clearml_tracker()
     
     config = TrainingConfigV3(
         model_path=args.model,
@@ -96,6 +191,10 @@ def run_pipeline_v3(args) -> Dict[str, Any]:
         resume_from=resume_from,
     )
     
+    # Log config to ClearML
+    if tracker:
+        tracker.log_hyperparameters(config.to_dict(), name="V3 Config")
+    
     all_data = DatasetLoader.load(args.dataset, config.max_samples)
     
     if config.val_split > 0 and len(all_data) > 10:
@@ -105,9 +204,21 @@ def run_pipeline_v3(args) -> Dict[str, Any]:
     else:
         train_data, val_data = all_data, None
     
-    trainer = OptimizedTrainer(config)
+    trainer = OptimizedTrainer(config, clearml_tracker=tracker)
     summary = trainer.train(train_data, val_data)
     summary["pipeline"] = "v3"
+    
+    # Upload final checkpoint as artifact
+    if tracker:
+        checkpoint_path = Path(config.output_dir) / "checkpoints" / "final.safetensors"
+        if checkpoint_path.exists():
+            tracker.upload_model(
+                checkpoint_path,
+                model_name=f"onn-lora-{Path(args.dataset).stem}",
+                tags=["lora", "v3", args.pipeline],
+                metadata=summary,
+            )
+    
     return summary
 
 
@@ -117,6 +228,7 @@ def compare_pipelines(args):
     print("PIPELINE COMPARISON MODE")
     print("="*70)
     
+    tracker = get_clearml_tracker()
     results = {}
     
     # Run v1 (baseline)
@@ -125,6 +237,11 @@ def compare_pipelines(args):
     print("="*70)
     try:
         results["v1"] = run_pipeline_v1(args)
+        if tracker:
+            tracker.log_metrics({
+                "v1_loss": results["v1"].get('final_loss', 0),
+                "v1_time": results["v1"].get('total_time_seconds', 0),
+            }, step=1, series="comparison")
     except Exception as e:
         print(f"v1 failed: {e}")
         results["v1"] = {"error": str(e)}
@@ -135,6 +252,12 @@ def compare_pipelines(args):
     print("="*70)
     try:
         results["v2"] = run_pipeline_v2(args)
+        if tracker:
+            tracker.log_metrics({
+                "v2_loss": results["v2"].get('final_train_loss', 0),
+                "v2_ppl": results["v2"].get('final_train_ppl', 0),
+                "v2_time": results["v2"].get('total_time_seconds', 0),
+            }, step=2, series="comparison")
     except Exception as e:
         print(f"v2 failed: {e}")
         results["v2"] = {"error": str(e)}
@@ -145,6 +268,12 @@ def compare_pipelines(args):
     print("="*70)
     try:
         results["v3"] = run_pipeline_v3(args)
+        if tracker:
+            tracker.log_metrics({
+                "v3_loss": results["v3"].get('final_train_loss', 0),
+                "v3_ppl": results["v3"].get('final_train_ppl', 0),
+                "v3_time": results["v3"].get('total_time_seconds', 0),
+            }, step=3, series="comparison")
     except Exception as e:
         print(f"v3 failed: {e}")
         results["v3"] = {"error": str(e)}
@@ -170,6 +299,10 @@ def compare_pipelines(args):
     
     with open(output_dir / "comparison_results.json", 'w') as f:
         json.dump(results, f, indent=2, default=str)
+    
+    # Upload comparison results to ClearML
+    if tracker:
+        tracker.upload_artifact("comparison_results", results)
     
     print(f"\n📁 Results saved to: {output_dir / 'comparison_results.json'}")
 
@@ -255,6 +388,13 @@ Examples:
   
   # Train on multimodal data
   python train.py --dataset data/3d_vision/0000.parquet --pipeline v2
+  
+  # With ClearML tracking
+  python train.py --dataset data/Dataset/math.jsonl --clearml --clearml-project "My Project"
+  
+  # Full ClearML example with experiment naming
+  python train.py --dataset data/Dataset/math.jsonl --pipeline v3 --amp \\
+      --clearml --clearml-project "ONN Training" --experiment-name "phi4-math-v1"
 """
     )
     
@@ -285,7 +425,18 @@ Examples:
     parser.add_argument("--find-lr", action="store_true", 
                         help="Run learning rate finder before training")
     
+    # ClearML tracking arguments
+    parser.add_argument("--clearml", action="store_true",
+                        help="Enable ClearML experiment tracking")
+    parser.add_argument("--clearml-project", type=str, default="ONN Training",
+                        help="ClearML project name")
+    parser.add_argument("--experiment-name", type=str, default=None,
+                        help="ClearML experiment/task name (auto-generated if not provided)")
+    
     args = parser.parse_args()
+    
+    # Initialize ClearML tracking if enabled
+    tracker = init_clearml_tracking(args)
     
     print("="*70)
     print("ONN UNIFIED TRAINING CLI")
@@ -296,6 +447,8 @@ Examples:
     print(f"  Mode: {mode}")
     print(f"  Epochs: {args.epochs}")
     print(f"  Batch size: {args.batch_size}")
+    if tracker:
+        print(f"  ClearML: Enabled (Project: {args.clearml_project})")
     
     # Run LR finder if requested
     if hasattr(args, 'find_lr') and args.find_lr:
@@ -314,31 +467,55 @@ Examples:
         suggested_lr = result["optimal_lr"]
         print(f"\n💡 Using suggested learning rate: {suggested_lr:.2e}")
         args.lr = suggested_lr
-    
-    if args.auto:
-        summary = auto_configure(args)
-        print("\n" + "="*70)
-        print("TRAINING COMPLETE")
-        print("="*70)
-        print(f"  Time: {summary.get('total_time_seconds', 0):.1f}s")
-        print(f"  Final Loss: {summary.get('final_train_loss', summary.get('final_loss', 0)):.4f}")
-    elif args.compare:
-        compare_pipelines(args)
-        return
-    else:
-        # Run selected pipeline
-        if args.pipeline == "v1":
-            summary = run_pipeline_v1(args)
-        elif args.pipeline == "v2":
-            summary = run_pipeline_v2(args)
-        elif args.pipeline == "v3":
-            summary = run_pipeline_v3(args)
         
-        print("\n" + "="*70)
-        print("TRAINING COMPLETE")
-        print("="*70)
-        print(f"  Time: {summary.get('total_time_seconds', 0):.1f}s")
-        print(f"  Final Loss: {summary.get('final_train_loss', summary.get('final_loss', 0)):.4f}")
+        # Log LR finder results to ClearML
+        if tracker:
+            tracker.log_hyperparameters({"suggested_lr": suggested_lr}, name="LR Finder")
+            tracker.upload_artifact("lr_finder_results", result)
+    
+    try:
+        if args.auto:
+            summary = auto_configure(args)
+            print("\n" + "="*70)
+            print("TRAINING COMPLETE")
+            print("="*70)
+            print(f"  Time: {summary.get('total_time_seconds', 0):.1f}s")
+            print(f"  Final Loss: {summary.get('final_train_loss', summary.get('final_loss', 0)):.4f}")
+        elif args.compare:
+            compare_pipelines(args)
+            return
+        else:
+            # Run selected pipeline
+            if args.pipeline == "v1":
+                summary = run_pipeline_v1(args)
+            elif args.pipeline == "v2":
+                summary = run_pipeline_v2(args)
+            elif args.pipeline == "v3":
+                summary = run_pipeline_v3(args)
+            
+            print("\n" + "="*70)
+            print("TRAINING COMPLETE")
+            print("="*70)
+            print(f"  Time: {summary.get('total_time_seconds', 0):.1f}s")
+            print(f"  Final Loss: {summary.get('final_train_loss', summary.get('final_loss', 0)):.4f}")
+        
+        # Mark task as completed in ClearML
+        if tracker:
+            tracker.set_status("completed")
+            print(f"\n📊 ClearML: Task completed")
+            if tracker.get_task_url():
+                print(f"   View results at: {tracker.get_task_url()}")
+    
+    except Exception as e:
+        # Mark task as failed in ClearML
+        if tracker:
+            tracker.set_status("failed", str(e))
+        raise
+    
+    finally:
+        # Close ClearML tracker
+        if tracker:
+            tracker.close()
 
 
 if __name__ == "__main__":

@@ -390,11 +390,14 @@ class AIMBatchLogger:
 class OptimizedTrainer:
     """Optimized trainer with mixed precision and gradient accumulation."""
     
-    def __init__(self, config: TrainingConfigV3):
+    def __init__(self, config: TrainingConfigV3, clearml_tracker=None):
         self.config = config
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.output_dir = Path(config.output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # ClearML tracker (optional)
+        self.clearml_tracker = clearml_tracker
         
         # Metrics
         self.metrics = {
@@ -418,6 +421,8 @@ class OptimizedTrainer:
         # Print config
         print(f"   Batch size: {config.batch_size} (micro) x {config.gradient_accumulation_steps} = {config.effective_batch_size} (effective)")
         print(f"   Mixed precision: {'ON' if config.use_amp else 'OFF'}")
+        if self.clearml_tracker:
+            print(f"   ClearML: Enabled")
     
     def _init_tokenizer(self):
         print(f"   Loading tokenizer...")
@@ -661,6 +666,15 @@ class OptimizedTrainer:
                     self.writer.add_scalar("train/ppl", metrics["ppl"], global_step)
                     self.writer.add_scalar("train/lr", metrics["lr"], global_step)
                 
+                # ClearML logging (real-time metrics)
+                if self.clearml_tracker and global_step % self.config.aim_log_every == 0:
+                    self.clearml_tracker.log_metrics({
+                        "loss": metrics["loss"],
+                        "perplexity": metrics["ppl"],
+                        "learning_rate": metrics["lr"],
+                        "grad_norm": metrics["grad_norm"] if metrics["grad_norm"] > 0 else 0,
+                    }, step=global_step, series="train")
+                
                 # AIM (batched)
                 if global_step % self.config.aim_log_every == 0:
                     self.aim.log({
@@ -681,6 +695,13 @@ class OptimizedTrainer:
                     
                     self.metrics["val_loss"].append(val_metrics["loss"])
                     self.metrics["val_ppl"].append(val_metrics["ppl"])
+                    
+                    # Log validation metrics to ClearML
+                    if self.clearml_tracker:
+                        self.clearml_tracker.log_metrics({
+                            "loss": val_metrics["loss"],
+                            "perplexity": val_metrics["ppl"],
+                        }, step=global_step, series="val")
                     
                     if val_metrics["loss"] < best_val_loss:
                         best_val_loss = val_metrics["loss"]

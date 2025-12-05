@@ -28,6 +28,9 @@ dev = [
 tracking = [
     "aim>=3.21.0; sys_platform != 'win32'",
 ]
+clearml = [
+    "clearml>=1.14.0",
+]
 quantization = [
     "bitsandbytes>=0.41.0",
 ]
@@ -55,7 +58,7 @@ inference = [
     "vllm>=0.2.0; sys_platform == 'linux'",
 ]
 full = [
-    "OpenNeuralEngine[tracking,quantization,peft,vision,audio,eval]",
+    "OpenNeuralEngine[tracking,clearml,quantization,peft,vision,audio,eval]",
 ]
 
 [project.scripts]

@@ -2,18 +2,21 @@
 """
 SNN Model Evaluation CLI
 
-Evaluate models with comprehensive metrics and automatic experiment tracking via Aim.
+Evaluate models with comprehensive metrics and automatic experiment tracking.
+Supports both Aim and ClearML tracking backends.
 
 Usage:
     python evaluate.py                    # Evaluate default model
     python evaluate.py --model best       # Evaluate best checkpoint
     python evaluate.py --suite all        # Run all evaluation suites
     python evaluate.py --output eval.json # Save results to JSON
+    python evaluate.py --clearml          # Enable ClearML tracking
 
 Features:
-- Automatic Aim experiment tracking (dockerized)
+- Automatic experiment tracking (Aim dockerized or ClearML)
 - Comprehensive evaluation suites (basic, reasoning, knowledge)
 - Platform-aware (works on Windows/Linux, CPU/GPU)
+- ClearML integration for distributed teams
 """
 
 from __future__ import annotations
@@ -27,7 +30,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # Add project root to path
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import torch
@@ -87,21 +90,40 @@ def resolve_model_path(model_spec: str) -> Path:
 # =============================================================================
 
 class EvalTracker:
-    """Evaluation tracking using the configured backend (Aim default)."""
+    """Evaluation tracking using the configured backend (Aim default, ClearML optional)."""
     
     def __init__(
         self,
         experiment: str = "snn",
         run_name: Optional[str] = None,
         enabled: bool = True,
+        use_clearml: bool = False,
+        clearml_project: str = "ONN Evaluation",
     ):
         self.enabled = enabled
         self.tracker = None
+        self.clearml_tracker = None
         self._run_url = None
         
         if not enabled:
             return
         
+        # Try ClearML first if requested
+        if use_clearml:
+            try:
+                from src.tracking.clearml_tracker import ClearMLTracker
+                self.clearml_tracker = ClearMLTracker(
+                    project_name=clearml_project,
+                    task_name=run_name or f"eval-{int(time.time())}",
+                    task_type="testing",
+                    tags=["evaluation"],
+                )
+                self._run_url = self.clearml_tracker.get_task_url()
+                print(f"📊 ClearML tracking enabled")
+            except Exception as e:
+                print(f"⚠️ ClearML not available: {e}")
+        
+        # Also try Aim as fallback/additional tracker
         try:
             from src.Core_Models.experiment_tracking import ExperimentTracker
             
@@ -110,11 +132,13 @@ class EvalTracker:
                 run_name=run_name or f"eval-{int(time.time())}",
                 config={"run_type": "evaluation"},
             )
-            self._run_url = self.tracker.run_url
+            if not self._run_url:
+                self._run_url = self.tracker.run_url
             
         except Exception as e:
-            print(f"⚠️ Tracking disabled: {e}")
-            self.enabled = False
+            if not self.clearml_tracker:
+                print(f"⚠️ All tracking disabled: {e}")
+                self.enabled = False
     
     @property
     def run_url(self) -> Optional[str]:
@@ -126,11 +150,21 @@ class EvalTracker:
                 self.tracker.log_params(params)
             except Exception:
                 pass
+        if self.clearml_tracker:
+            try:
+                self.clearml_tracker.log_hyperparameters(params, name="Eval Config")
+            except Exception:
+                pass
     
     def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None):
         if self.tracker:
             try:
                 self.tracker.log_metrics(metrics, step=step)
+            except Exception:
+                pass
+        if self.clearml_tracker:
+            try:
+                self.clearml_tracker.log_metrics(metrics, step=step or 0, series="eval")
             except Exception:
                 pass
     
@@ -140,11 +174,21 @@ class EvalTracker:
                 self.tracker.log_artifact(local_path, artifact_path)
             except Exception:
                 pass
+        if self.clearml_tracker:
+            try:
+                self.clearml_tracker.upload_artifact(artifact_path or Path(local_path).name, local_path)
+            except Exception:
+                pass
     
     def finish(self):
         if self.tracker:
             try:
                 self.tracker.unwatch()
+            except Exception:
+                pass
+        if self.clearml_tracker:
+            try:
+                self.clearml_tracker.close()
             except Exception:
                 pass
 
@@ -384,6 +428,17 @@ Examples:
         action="store_true",
         help="Quiet mode (less output)",
     )
+    parser.add_argument(
+        "--clearml",
+        action="store_true",
+        help="Enable ClearML tracking",
+    )
+    parser.add_argument(
+        "--clearml-project",
+        type=str,
+        default="ONN Evaluation",
+        help="ClearML project name",
+    )
     
     args = parser.parse_args()
     
@@ -412,6 +467,8 @@ Examples:
             experiment=args.experiment,
             run_name=f"eval-{model_path.name}-{int(time.time())}",
             enabled=True,
+            use_clearml=args.clearml,
+            clearml_project=args.clearml_project,
         )
         if tracker.run_url:
             print(f"📊 Tracking: {tracker.run_url}")
